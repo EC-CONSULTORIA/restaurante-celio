@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Instalador do Sabor & Gestão para Windows (Python 3.8+ , sem bibliotecas extras).
+Desenvolvido por Emanuel (contato em app/autor.js).
 
     py instalar.py                instala ou atualiza (mantém os dados)
     py instalar.py --desinstalar  remove o programa e os atalhos
@@ -18,7 +19,7 @@ import sys
 NOME = "Sabor & Gestão"
 ORIGEM = os.path.dirname(os.path.abspath(__file__))
 DESTINO = os.path.join(os.environ.get("LOCALAPPDATA") or os.path.expanduser("~"), "SaborGestao")
-ARQUIVOS = ["servidor.py", "instalar.py", "icone.ico", "LEIA-ME.md"]
+ARQUIVOS = ["servidor.py", "licenca.py", "instalar.py", "icone.ico", "LEIA-ME.md"]
 
 
 def perguntar(texto, padrao=False):

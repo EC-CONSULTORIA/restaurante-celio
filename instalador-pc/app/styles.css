@@ -1,4 +1,5 @@
-/* ===== Sabor & Gestão — design system ===== */
+/* Sabor & Gestão — desenvolvido por Emanuel (contato em autor.js)
+   ===== Sabor & Gestão — design system ===== */
 :root {
   --bg: #f5f3ef;
   --surface: #ffffff;
@@ -226,3 +227,22 @@ tr.row-warn td { background: var(--warn-soft); }
   .ficha-resumo { grid-template-columns: repeat(2, 1fr); }
   .grid-2 { grid-template-columns: 1fr; }
 }
+
+/* ---------- créditos, licença ---------- */
+.rodape { text-align: center; color: var(--muted); font-size: .82rem; padding: 1.2rem 1rem 1.6rem; }
+.rodape a, .sobre a, .bloqueio a { color: var(--primary); }
+.aviso-licenca { background: var(--warn-soft); color: var(--warn); border-bottom: 1px solid var(--border); padding: .5rem 1rem; font-size: .9rem; text-align: center; }
+.aviso-licenca button { margin-left: .6rem; }
+.bloqueio { position: fixed; inset: 0; background: var(--bg); z-index: 70; display: flex; align-items: center; justify-content: center; padding: 1rem; overflow-y: auto; }
+.bloqueio[hidden] { display: none; }
+.bloqueio-caixa { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); max-width: 560px; width: 100%; padding: 1.6rem; }
+.bloqueio-caixa h2 { margin: 0 0 .4rem; }
+.licenca-chave { width: 100%; min-height: 6.5rem; font-family: var(--mono); font-size: .8rem; word-break: break-all; }
+.codigo-maquina { font-family: var(--mono); font-size: 1.1rem; font-weight: 700; letter-spacing: .05em; background: var(--surface-2); border: 1px dashed var(--border); border-radius: 8px; padding: .3rem .6rem; display: inline-block; }
+.sobre dl { display: grid; grid-template-columns: max-content 1fr; gap: .3rem 1rem; margin: .8rem 0; }
+.sobre dt { color: var(--muted); }
+.sobre dd { margin: 0; }
+.selo { display: inline-block; padding: .1rem .55rem; border-radius: 999px; font-size: .82rem; font-weight: 600; }
+.selo.ok { background: var(--ok-soft); color: var(--ok); }
+.selo.warn { background: var(--warn-soft); color: var(--warn); }
+.selo.bad { background: var(--bad-soft); color: var(--bad); }

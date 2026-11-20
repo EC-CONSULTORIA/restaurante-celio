@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <!-- Sabor & Gestão — desenvolvido por Emanuel (contato em autor.js) -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sabor &amp; Gestão</title>
   <link rel="stylesheet" href="styles.css">
@@ -18,10 +19,12 @@
     <div class="topbar-right">
       <span id="statusBanco" class="clock"></span>
       <span id="relogio" class="clock"></span>
+      <button class="btn btn-ghost" id="btnSobre" title="Sobre, licença e contato do desenvolvedor">ℹ️</button>
       <button class="btn btn-ghost" id="btnTema" title="Alternar tema claro/escuro">🌙</button>
     </div>
   </header>
 
+  <div class="aviso-licenca no-print" id="avisoLicenca" hidden></div>
   <nav class="tabs no-print" id="tabs">
     <button class="tab active" data-tab="dashboard">📊 Dashboard</button>
     <button class="tab" data-tab="pdv">🧾 Frente de Caixa</button>
@@ -236,6 +239,9 @@
       <p class="hint" id="hintArmazenamento">Todos os dados ficam guardados neste navegador (localStorage). Faça o backup JSON com frequência e guarde no pen drive ou na nuvem.</p>
     </section>
   </main>
+  <footer class="rodape no-print" id="rodape"></footer>
+
+  <div class="bloqueio no-print" id="bloqueio" hidden><div class="bloqueio-caixa" id="bloqueioCaixa"></div></div>
 
   <!-- Modal genérico -->
   <div class="modal-bg no-print" id="modalBg" hidden>
@@ -251,6 +257,7 @@
   <!-- Área de impressão (cupom térmico 80mm e relatórios) -->
   <div id="printArea"></div>
 
+  <script src="autor.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

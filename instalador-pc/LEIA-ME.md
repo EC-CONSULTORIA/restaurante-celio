@@ -1,5 +1,7 @@
 # Sabor & Gestão — versão para instalar no PC (Python + banco local)
 
+**Desenvolvido por Emanuel.** Contato: veja o rodapé do sistema ou o botão ℹ️ Sobre.
+
 Esta versão roda direto no computador do restaurante, **sem internet e sem mensalidade**, e guarda tudo num **banco de dados SQLite** no próprio PC (não mais no navegador).
 
 ## Como instalar (Windows 10/11)
@@ -11,6 +13,14 @@ Esta versão roda direto no computador do restaurante, **sem internet e sem mens
 4. Pronto: aparece o atalho **Sabor & Gestão** na Área de Trabalho e no menu Iniciar.
 
 Não precisa ser administrador. O programa fica em `%LOCALAPPDATA%\SaborGestao`.
+
+## Licença de uso
+
+- Depois de instalado, o sistema funciona por **7 dias de teste**.
+- Para continuar usando, peça uma **chave de licença** ao desenvolvedor. Clique em **ℹ️ Sobre**, copie o **código deste computador** e envie junto com o nome do restaurante.
+- Cole a chave recebida (começa com `SG1-`) em **ℹ️ Sobre → Ativar nova chave**.
+- A licença tem prazo. Faltando 10 dias aparece um aviso. Quando vence, o sistema bloqueia até você colar uma chave nova, mas **seus dados não são apagados** e o backup continua disponível.
+- Não atrase a data do Windows: o sistema percebe e bloqueia até a data ser corrigida.
 
 ## Onde ficam os dados
 

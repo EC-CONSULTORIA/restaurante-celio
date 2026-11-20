@@ -1,6 +1,8 @@
 /* =========================================================
    Sabor & Gestão — lógica do sistema (Vanilla JS, offline)
-   Todos os dados ficam no localStorage do navegador.
+   Desenvolvido por Emanuel. Créditos e contato: autor.js.
+   Instalado no PC, os dados ficam no banco SQLite local
+   (servidor.py) e o uso depende de licença com prazo.
    ========================================================= */
 'use strict';
 
@@ -11,6 +13,8 @@ const UNIDADES = ['kg', 'g', 'L', 'ml', 'un'];
 // Na ficha técnica, kg é informado em gramas e L em mililitros.
 const SUBUNIDADE = { kg: ['g', 1000], L: ['ml', 1000], g: ['g', 1], ml: ['ml', 1], un: ['un', 1] };
 const MIN_ATRASO = 25;
+// Versão instalada: só funciona aberta pelo atalho (servidor local com banco e licença).
+const EXIGE_SERVIDOR = true;
 
 /* ---------- utilidades ---------- */
 const $ = (s, el = document) => el.querySelector(s);
@@ -113,6 +117,7 @@ async function enviarBanco() {
   salvando = true; pendente = false;
   try {
     const r = await fetch('/api/dados', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(db) });
+    if (r.status === 402) { const j = await r.json(); pendente = false; mostrarLicenca(j.licenca); marcarBanco(false); return; }
     if (!r.ok) throw new Error((await r.json().catch(() => ({}))).erro || 'HTTP ' + r.status);
     marcarBanco(true);
   } catch (e) {
@@ -910,11 +915,114 @@ function ligarEventos() {
   window.addEventListener('afterprint', () => { $('#printArea').innerHTML = ''; });
 }
 
+
+/* ---------- créditos e licença de uso ----------
+   Desenvolvido por Emanuel. A licença é conferida pelo servidor local
+   (licenca.py); aqui só mostramos a situação e a tela de ativação. */
+const AUTOR_ = () => window.AUTOR || { nome: 'Emanuel' };
+let licenca = null;
+function contatosHTML(sep = ' · ') {
+  const a = AUTOR_(), out = [];
+  if (a.whatsapp) { const n = a.whatsapp.replace(/\D/g, ''); out.push(`WhatsApp <a href="https://wa.me/${n.length <= 11 ? '55' + n : n}" target="_blank" rel="noopener">${esc(a.whatsapp)}</a>`); }
+  if (a.email) out.push(`<a href="mailto:${esc(a.email)}">${esc(a.email)}</a>`);
+  if (a.site) out.push(`<a href="${esc(/^https?:/.test(a.site) ? a.site : 'https://' + a.site)}" target="_blank" rel="noopener">${esc(a.site)}</a>`);
+  return out.join(sep);
+}
+const autorNome = () => { const a = AUTOR_(); return esc(a.nome) + (a.empresa ? ' — ' + esc(a.empresa) : ''); };
+function renderRodape() {
+  const c = contatosHTML();
+  $('#rodape').innerHTML = `Sabor &amp; Gestão v${esc(AUTOR_().versao || '')} · Desenvolvido por <b>${autorNome()}</b>${c ? ' · ' + c : ''}`;
+}
+function seloLicenca(l) {
+  if (!l) return '<span class="selo warn">sem servidor</span>';
+  const cls = l.bloqueado ? 'bad' : (l.estado === 'ativa' ? 'ok' : 'warn');
+  const nome = { ativa: 'Ativa', aviso: 'Vence em breve', teste: 'Teste', expirada: 'Vencida', teste_fim: 'Teste encerrado', invalida: 'Inválida', relogio: 'Data do PC errada' }[l.estado] || l.estado;
+  return `<span class="selo ${cls}">${nome}</span>`;
+}
+function formLicencaHTML() {
+  return `<p>Código deste computador: <span class="codigo-maquina" id="codMaq">${esc(licenca?.maquina || '—')}</span>
+      <button class="btn btn-ghost" type="button" id="copiarCod">Copiar</button></p>
+    <p class="hint">Envie esse código para ${esc(AUTOR_().nome)} junto com o nome do restaurante para receber sua chave.</p>
+    <label>Chave de licença<textarea class="licenca-chave" id="campoChave" placeholder="Cole aqui a chave que começa com SG1-"></textarea></label>
+    <p id="erroChave" class="hint" style="color:var(--bad)"></p>`;
+}
+function ligarFormLicenca(raiz) {
+  const cp = raiz.querySelector('#copiarCod');
+  if (cp) cp.onclick = () => { navigator.clipboard?.writeText(licenca?.maquina || '').then(() => toast('Código copiado.', 'ok'), () => {}); };
+}
+async function ativarChave(raiz) {
+  const chave = raiz.querySelector('#campoChave').value.trim();
+  const erro = raiz.querySelector('#erroChave');
+  if (!chave) { erro.textContent = 'Cole a chave de licença.'; return false; }
+  try {
+    const r = await fetch('/api/licenca', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave }) });
+    const j = await r.json();
+    if (!r.ok) { erro.textContent = j.erro || 'Chave não aceita.'; return false; }
+    aplicarLicenca(j); toast('Licença ativada! ' + (j.mensagem || ''), 'ok');
+    salvar();
+    return true;
+  } catch (e) { erro.textContent = 'O sistema local não respondeu. Feche e abra pelo atalho.'; return false; }
+}
+function aplicarLicenca(l) {
+  licenca = l;
+  const av = $('#avisoLicenca');
+  if (l && !l.bloqueado && (l.estado === 'aviso' || l.estado === 'teste')) {
+    av.innerHTML = `⏳ ${esc(l.mensagem)} Fale com ${autorNome()}${contatosHTML() ? ': ' + contatosHTML() : '.'} <button class="btn btn-ghost" id="avisoAtivar">Inserir chave</button>`;
+    av.hidden = false; $('#avisoAtivar').onclick = abrirSobre;
+  } else av.hidden = true;
+  if (l && l.bloqueado) mostrarLicenca(l); else $('#bloqueio').hidden = true;
+}
+function mostrarLicenca(l) {
+  if (l) licenca = l;
+  const cx = $('#bloqueioCaixa'), c = contatosHTML('<br>');
+  const titulo = licenca?.estado === 'relogio' ? 'Data do computador incorreta' : 'Licença de uso necessária';
+  cx.innerHTML = `<h2>🔒 ${titulo}</h2><p>${esc(licenca?.mensagem || '')}</p>
+    ${licenca?.estado === 'relogio' ? '' : formLicencaHTML()}
+    <p><b>Fale com o desenvolvedor:</b><br>${autorNome()}${c ? '<br>' + c : ''}</p>
+    <p class="hint">Seus dados continuam guardados neste computador. Você pode baixar uma cópia a qualquer momento.</p>
+    <div class="modal-foot" style="padding:0;border:0;gap:.5rem;display:flex;flex-wrap:wrap;justify-content:flex-end">
+      <button class="btn btn-ghost" id="bloqBackup">💾 Baixar backup dos dados</button>
+      ${licenca?.estado === 'relogio' ? '<button class="btn btn-primary" id="bloqRecarregar">Já acertei a data</button>' : '<button class="btn btn-primary" id="bloqAtivar">Ativar licença</button>'}
+    </div>`;
+  ligarFormLicenca(cx);
+  $('#bloqBackup').onclick = () => baixarArquivo(`backup-sabor-gestao-${hojeISO()}.json`, JSON.stringify(db, null, 2), 'application/json');
+  const at = $('#bloqAtivar'); if (at) at.onclick = () => ativarChave(cx);
+  const rc = $('#bloqRecarregar'); if (rc) rc.onclick = () => location.reload();
+  $('#bloqueio').hidden = false;
+}
+function abrirSobre() {
+  const a = AUTOR_(), l = licenca, c = contatosHTML('<br>');
+  const linhasLic = !modoBanco ? '<dt>Licença</dt><dd>Disponível só na versão instalada no PC</dd>' : `
+    <dt>Licença</dt><dd>${seloLicenca(l)} ${esc(l?.mensagem || '')}</dd>
+    ${l?.cliente ? `<dt>Licenciado para</dt><dd>${esc(l.cliente)}</dd>` : ''}
+    ${l?.validade ? `<dt>Válida até</dt><dd>${dataBR(l.validade)}</dd>` : ''}`;
+  abrirModal('Sobre o Sabor & Gestão', `<div class="sobre">
+    <p>Sistema de gestão para restaurantes, marmitarias, lanchonetes e bares.</p>
+    <dl><dt>Versão</dt><dd>${esc(a.versao || '')}</dd>
+      <dt>Desenvolvido por</dt><dd><b>${autorNome()}</b></dd>
+      ${c ? `<dt>Contato</dt><dd>${c}</dd>` : ''}
+      ${linhasLic}</dl>
+    ${modoBanco ? '<hr>' + formLicencaHTML() : ''}
+    <p class="hint">© ${new Date().getFullYear()} ${esc(a.nome)}. Uso permitido somente com licença válida emitida pelo desenvolvedor.</p></div>`,
+    modoBanco ? [{ label: 'Ativar nova chave', cls: 'btn-primary', acao: () => { ativarChave($('#modalCorpo')).then(ok => { if (ok) fecharModal(); }); return false; } }] : []);
+  ligarFormLicenca($('#modalCorpo'));
+}
+async function verificarLicenca() {
+  try { const r = await fetch('/api/licenca', { cache: 'no-store' }); if (r.ok) aplicarLicenca(await r.json()); } catch (e) { }
+}
+
 /* ---------- inicialização ---------- */
 function relogio() { $('#relogio').textContent = new Date().toLocaleString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); }
 async function iniciar() {
   await carregar(); salvar(); aplicarTema();
+  renderRodape(); $('#btnSobre').onclick = abrirSobre;
+  if (!modoBanco && EXIGE_SERVIDOR) {
+    licenca = { bloqueado: true, estado: 'relogio', mensagem: '' };
+    $('#bloqueioCaixa').innerHTML = `<h2>Abra pelo atalho</h2><p>Esta versão do Sabor &amp; Gestão grava os dados no banco do computador. Abra pelo atalho <b>Sabor &amp; Gestão</b> na Área de Trabalho ou no menu Iniciar.</p><p>Desenvolvido por <b>${autorNome()}</b>${contatosHTML() ? '<br>' + contatosHTML('<br>') : ''}</p>`;
+    $('#bloqueio').hidden = false;
+  }
   if (modoBanco) {
+    await verificarLicenca(); setInterval(verificarLicenca, 30 * 60000);
     marcarBanco(true);
     const h = document.getElementById('hintArmazenamento');
     if (h) h.textContent = 'Os dados ficam no banco de dados deste computador (pasta do programa → dados\\sabor_gestao.db) e o sistema faz uma cópia automática por dia em dados\\backups. Mesmo assim, baixe o backup JSON de vez em quando e guarde no pen drive ou na nuvem.';

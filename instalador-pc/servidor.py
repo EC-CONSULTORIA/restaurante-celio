@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 Sabor & Gestão — servidor local com banco de dados SQLite.
+Desenvolvido por Emanuel. Contato e créditos: app/autor.js.
+Uso sujeito a licença com prazo (ver licenca.py).
 
 Roda só no próprio computador (127.0.0.1), sem internet e sem mensalidade.
 Serve a tela do sistema (pasta app/) e grava todos os dados no arquivo
@@ -23,6 +25,8 @@ import time
 import urllib.request
 import webbrowser
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+
+import licenca
 
 VERSAO = "1.0.0"
 HOST = "127.0.0.1"
@@ -109,6 +113,46 @@ def agora():
     return datetime.datetime.now().isoformat(timespec="seconds")
 
 
+def meta_interna():
+    con = conectar()
+    try:
+        return {k: json.loads(v) for k, v in con.execute("SELECT chave, valor FROM meta WHERE chave LIKE '\\_%' ESCAPE '\\'")}
+    finally:
+        con.close()
+
+
+def gravar_meta(valores):
+    if not valores:
+        return
+    with _trava:
+        con = conectar()
+        try:
+            with con:
+                for k, v in valores.items():
+                    con.execute("INSERT INTO meta VALUES (?, ?) ON CONFLICT(chave) DO UPDATE SET valor=excluded.valor",
+                                (k, json.dumps(v)))
+        finally:
+            con.close()
+
+
+def situacao_licenca():
+    sit, gravar = licenca.avaliar(meta_interna())
+    gravar_meta(gravar)
+    return sit
+
+
+def ativar_licenca(chave):
+    dados = licenca.ler_chave(chave)
+    maquina = licenca.codigo_maquina()
+    if dados.get("m", "*") not in ("*", maquina):
+        raise licenca.LicencaInvalida("esta chave é de outro computador (código %s)" % dados.get("m"))
+    if datetime.date.fromisoformat(dados["v"]) < datetime.date.today():
+        raise licenca.LicencaInvalida("esta chave já venceu em %s" % datetime.date.fromisoformat(dados["v"]).strftime("%d/%m/%Y"))
+    gravar_meta({"_licenca": "".join(chave.split())})
+    log.info("licença ativada: cliente=%s validade=%s id=%s", dados.get("c"), dados.get("v"), dados.get("id"))
+    return situacao_licenca()
+
+
 def ler_dados():
     """Monta o objeto completo do sistema a partir das tabelas. None = banco vazio."""
     con = conectar()
@@ -132,8 +176,8 @@ def gravar_dados(obj):
         try:
             with con:
                 for chave, valor in obj.items():
-                    if chave in COLECOES:
-                        continue
+                    if chave in COLECOES or str(chave).startswith("_"):
+                        continue   # chaves "_..." são internas (licença), nunca vêm da tela
                     con.execute("INSERT INTO meta VALUES (?, ?) ON CONFLICT(chave) DO UPDATE SET valor=excluded.valor",
                                 (str(chave), json.dumps(valor, ensure_ascii=False)))
                 for t in COLECOES:
@@ -216,6 +260,8 @@ class Manipulador(SimpleHTTPRequestHandler):
         caminho = self.path.split("?")[0]
         if caminho == "/api/ping":
             return self._json(200, {"ok": True, "app": "sabor-gestao", "versao": VERSAO})
+        if caminho == "/api/licenca":
+            return self._json(200, situacao_licenca())
         if caminho == "/api/dados":
             try:
                 return self._json(200, {"dados": ler_dados(), "banco": ARQ_BANCO})
@@ -226,17 +272,33 @@ class Manipulador(SimpleHTTPRequestHandler):
             return self._json(404, {"erro": "não encontrado"})
         return super().do_GET()
 
+    def _corpo_json(self):
+        tamanho = int(self.headers.get("Content-Length") or 0)
+        if tamanho > 200 * 1024 * 1024:
+            raise ValueError("dados grandes demais")
+        return json.loads(self.rfile.read(tamanho).decode("utf-8"))
+
     def do_PUT(self):
         global ultimo_uso
         ultimo_uso = time.time()
-        if self.path.split("?")[0] != "/api/dados":
+        caminho = self.path.split("?")[0]
+        if caminho not in ("/api/dados", "/api/licenca"):
             return self._json(404, {"erro": "não encontrado"})
         if not self._origem_ok():
             return self._json(403, {"erro": "origem não permitida"})
+        if caminho == "/api/licenca":
+            try:
+                return self._json(200, ativar_licenca(str(self._corpo_json().get("chave", ""))))
+            except licenca.LicencaInvalida as e:
+                return self._json(400, {"erro": "Chave não aceita: %s." % e})
+            except Exception as e:
+                log.exception("erro ao ativar licença")
+                return self._json(400, {"erro": str(e)})
+        sit = situacao_licenca()
+        if sit.get("bloqueado"):
+            return self._json(402, {"erro": "licença: " + sit.get("mensagem", ""), "licenca": sit})
         try:
-            tamanho = int(self.headers.get("Content-Length") or 0)
-            obj = json.loads(self.rfile.read(tamanho).decode("utf-8"))
-            gravar_dados(obj)
+            gravar_dados(self._corpo_json())
             return self._json(200, {"ok": True, "salvo_em": agora()})
         except Exception as e:
             log.exception("erro ao gravar")
