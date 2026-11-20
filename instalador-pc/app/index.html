@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <!-- Sabor & Gestão — desenvolvido por Emanuel (contato em autor.js) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sabor &amp; Gestão</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar no-print">
+    <div class="brand">
+      <span class="brand-logo">🍽️</span>
+      <div>
+        <strong id="nomeRestaurante">Sabor &amp; Gestão</strong>
+        <small>Gestão para restaurantes e marmitarias</small>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span id="statusBanco" class="clock"></span>
+      <span id="relogio" class="clock"></span>
+      <button class="btn btn-ghost" id="btnSobre" title="Sobre, licença e contato do desenvolvedor">ℹ️</button>
+      <button class="btn btn-ghost" id="btnTema" title="Alternar tema claro/escuro">🌙</button>
+    </div>
+  </header>
+
+  <div class="aviso-licenca no-print" id="avisoLicenca" hidden></div>
+  <nav class="tabs no-print" id="tabs">
+    <button class="tab active" data-tab="dashboard">📊 Dashboard</button>
+    <button class="tab" data-tab="pdv">🧾 Frente de Caixa</button>
+    <button class="tab" data-tab="cozinha">👨‍🍳 Cozinha</button>
+    <button class="tab" data-tab="estoque">📦 Estoque</button>
+    <button class="tab" data-tab="cardapio">📋 Cardápio</button>
+    <button class="tab" data-tab="pagar">💸 Contas a Pagar</button>
+    <button class="tab" data-tab="receber">💰 Contas a Receber</button>
+    <button class="tab" data-tab="backup">💾 Backup</button>
+  </nav>
+
+  <main class="no-print">
+    <!-- 1. DASHBOARD / DRE -->
+    <section class="panel active" id="tab-dashboard">
+      <div class="section-head">
+        <h2>Dashboard e DRE Gerencial</h2>
+        <div class="seg" id="filtroPeriodo">
+          <button data-p="hoje" class="active">Hoje</button>
+          <button data-p="7d">7 dias</button>
+          <button data-p="mes">Este mês</button>
+          <button data-p="tudo">Tudo</button>
+        </div>
+      </div>
+      <div class="kpis" id="kpis"></div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>DRE Gerencial Simplificado</h3>
+          <table class="dre" id="dre"></table>
+          <p class="hint">Compras de insumos não entram como despesa: o custo delas já aparece no CMV quando o prato é vendido.</p>
+        </div>
+        <div class="card">
+          <h3>Alertas</h3>
+          <ul class="alerts" id="alertas"></ul>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Engenharia de Cardápio (período)</h3>
+        <div class="table-wrap"><table id="tabEngenharia"></table></div>
+        <p class="hint">Estrela: vende muito e tem boa margem. Cavalo de batalha: vende muito com margem apertada. Quebra-cabeça: boa margem e pouca saída. Cachorro: pouca saída e margem ruim.</p>
+      </div>
+    </section>
+
+    <!-- 2. PDV -->
+    <section class="panel" id="tab-pdv">
+      <div class="pdv">
+        <div class="pdv-menu">
+          <div class="pdv-filters">
+            <input type="search" id="buscaPdv" placeholder="🔎 Buscar prato ou bebida...">
+            <div class="chips" id="chipsCategorias"></div>
+          </div>
+          <div class="menu-grid" id="menuGrid"></div>
+        </div>
+        <aside class="pdv-cart card">
+          <h3>Pedido atual</h3>
+          <div class="seg seg-full" id="canalVenda">
+            <button data-c="Balcão" class="active">🥡 Balcão</button>
+            <button data-c="Mesa">🍽️ Mesa</button>
+            <button data-c="Delivery">🛵 Delivery</button>
+          </div>
+          <div id="camposCanal" class="form-grid"></div>
+          <ul class="cart" id="carrinho"></ul>
+          <div class="totais" id="totais"></div>
+          <label class="lbl">Forma de pagamento</label>
+          <div class="pay-grid" id="formasPagamento">
+            <button data-f="PIX" class="active">PIX</button>
+            <button data-f="Dinheiro">Dinheiro</button>
+            <button data-f="Débito">Débito</button>
+            <button data-f="Crédito">Crédito</button>
+            <button data-f="Fiado">Fiado</button>
+          </div>
+          <div id="camposPagamento" class="form-grid"></div>
+          <div class="cart-actions">
+            <button class="btn btn-ghost" id="btnLimpar">Limpar</button>
+            <button class="btn btn-primary btn-lg" id="btnFinalizar">Finalizar pedido</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- 3. COZINHA / KDS -->
+    <section class="panel" id="tab-cozinha">
+      <div class="section-head">
+        <h2>Cozinha (KDS)</h2>
+        <span class="hint">Atualiza sozinho a cada 30 segundos. Pedidos com mais de 25 min ficam em vermelho.</span>
+      </div>
+      <div class="kanban">
+        <div class="col"><h3>🕒 Novos pedidos <span class="count" id="cNovo"></span></h3><div id="kNovo"></div></div>
+        <div class="col"><h3>🔥 Em preparo <span class="count" id="cPreparo"></span></h3><div id="kPreparo"></div></div>
+        <div class="col"><h3>🍽️ Prontos <span class="count" id="cPronto"></span></h3><div id="kPronto"></div></div>
+      </div>
+      <div class="card">
+        <h3>Histórico de pedidos</h3>
+        <div class="table-wrap"><table id="tabHistorico"></table></div>
+      </div>
+    </section>
+
+    <!-- 4. ESTOQUE -->
+    <section class="panel" id="tab-estoque">
+      <div class="section-head">
+        <h2>Estoque e Insumos</h2>
+        <div class="btn-row">
+          <button class="btn" id="btnListaCompras">🛒 Lista de compras</button>
+          <button class="btn btn-primary" id="btnNovoInsumo">+ Novo insumo</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-wrap"><table id="tabInsumos"></table></div>
+      </div>
+      <div class="card">
+        <div class="section-head">
+          <h3>Kardex (movimentações)</h3>
+          <select id="filtroKardex">
+            <option value="">Todas</option>
+            <option value="entrada">Entradas (compras)</option>
+            <option value="venda">Saídas por venda</option>
+            <option value="perda">Saídas manuais / perdas</option>
+          </select>
+        </div>
+        <div class="table-wrap"><table id="tabKardex"></table></div>
+      </div>
+    </section>
+
+    <!-- 5. CARDÁPIO -->
+    <section class="panel" id="tab-cardapio">
+      <div class="section-head">
+        <h2>Cardápio e Ficha Técnica</h2>
+        <div class="btn-row">
+          <label class="inline">Meta de CMV <input type="number" id="metaCmv" min="1" max="100" step="1"> %</label>
+          <button class="btn btn-primary" id="btnNovoPrato">+ Novo item</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-wrap"><table id="tabCardapio"></table></div>
+      </div>
+    </section>
+
+    <!-- 6. CONTAS A PAGAR -->
+    <section class="panel" id="tab-pagar">
+      <div class="section-head">
+        <h2>Contas a Pagar</h2>
+        <div class="btn-row">
+          <select id="filtroPagar">
+            <option value="abertas">Em aberto</option>
+            <option value="pagas">Pagas</option>
+            <option value="todas">Todas</option>
+          </select>
+          <button class="btn btn-primary" id="btnNovaConta">+ Nova conta</button>
+        </div>
+      </div>
+      <div class="kpis kpis-sm" id="resumoPagar"></div>
+      <div class="card"><div class="table-wrap"><table id="tabPagar"></table></div></div>
+    </section>
+
+    <!-- 7. CONTAS A RECEBER -->
+    <section class="panel" id="tab-receber">
+      <div class="section-head">
+        <h2>Contas a Receber e Caderneta de Fiado</h2>
+        <div class="btn-row">
+          <select id="filtroReceber">
+            <option value="abertas">Em aberto</option>
+            <option value="quitadas">Quitadas</option>
+            <option value="todas">Todas</option>
+          </select>
+          <button class="btn btn-primary" id="btnNovoTitulo">+ Novo lançamento</button>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Saldo devedor por cliente</h3>
+          <div class="table-wrap"><table id="tabSaldos"></table></div>
+        </div>
+        <div class="card">
+          <h3>Recebíveis de cartão de crédito</h3>
+          <div class="table-wrap"><table id="tabCartao"></table></div>
+        </div>
+      </div>
+      <div class="card"><h3>Títulos</h3><div class="table-wrap"><table id="tabReceber"></table></div></div>
+    </section>
+
+    <!-- 8. BACKUP -->
+    <section class="panel" id="tab-backup">
+      <div class="section-head"><h2>Backup, Segurança e Exportação</h2></div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Dados do restaurante</h3>
+          <div class="form-grid">
+            <label>Nome do restaurante<input id="cfgNome"></label>
+            <label>Teto de fiado por cliente (R$)<input id="cfgTeto" type="number" min="0" step="10"></label>
+            <label>Prazo padrão do fiado (dias)<input id="cfgPrazo" type="number" min="1" step="1"></label>
+          </div>
+          <button class="btn btn-primary" id="btnSalvarCfg">Salvar</button>
+        </div>
+        <div class="card">
+          <h3>Exportar e salvar</h3>
+          <div class="stack">
+            <button class="btn" id="btnCsv">📄 Exportar vendas (CSV / Excel)</button>
+            <button class="btn" id="btnBackup">💾 Baixar backup completo (JSON)</button>
+            <label class="btn">♻️ Restaurar backup (JSON)<input type="file" id="fileRestore" accept=".json,application/json" hidden></label>
+          </div>
+        </div>
+        <div class="card danger-zone">
+          <h3>Modo real</h3>
+          <p>Apaga as vendas de teste, os títulos gerados por elas e devolve ao estoque o que essas vendas consumiram. Cardápio, insumos e contas a pagar continuam.</p>
+          <button class="btn btn-danger" id="btnModoReal">Zerar vendas de teste</button>
+        </div>
+        <div class="card danger-zone">
+          <h3>Restaurar dados de exemplo</h3>
+          <p>Apaga tudo e volta ao cardápio e estoque de demonstração.</p>
+          <button class="btn btn-danger" id="btnFabrica">Restaurar padrão de fábrica</button>
+        </div>
+      </div>
+      <p class="hint" id="hintArmazenamento">Todos os dados ficam guardados neste navegador (localStorage). Faça o backup JSON com frequência e guarde no pen drive ou na nuvem.</p>
+    </section>
+  </main>
+  <footer class="rodape no-print" id="rodape"></footer>
+
+  <div class="bloqueio no-print" id="bloqueio" hidden><div class="bloqueio-caixa" id="bloqueioCaixa"></div></div>
+
+  <!-- Modal genérico -->
+  <div class="modal-bg no-print" id="modalBg" hidden>
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-head"><h3 id="modalTitulo"></h3><button class="btn btn-ghost" data-close>✕</button></div>
+      <div class="modal-body" id="modalCorpo"></div>
+      <div class="modal-foot" id="modalRodape"></div>
+    </div>
+  </div>
+
+  <div class="toasts no-print" id="toasts"></div>
+
+  <!-- Área de impressão (cupom térmico 80mm e relatórios) -->
+  <div id="printArea"></div>
+
+  <script src="autor.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

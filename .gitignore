@@ -1,0 +1,8 @@
+__pycache__/
+instalador-pc/dados/
+dist/
+build/
+*.spec
+# NUNCA versionar a chave privada nem o historico de licencas
+gerador-licenca/chave_privada.json*
+gerador-licenca/licencas_emitidas.csv
